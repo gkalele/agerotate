@@ -11,26 +11,32 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 package bucket
 
 import (
-	"github.com/AgentZombie/agerotate"
+	"github.com/gkalele/agerotate"
 )
 
+type CallbackFn func(string)
+
 // Cleanup sets up and invokes actual object cleanup.
-func Cleanup(sortedRanges []agerotate.Range, objects agerotate.Objects) error {
+func CleanupWithCallback(sortedRanges []agerotate.Range, objects agerotate.Objects, cb CallbackFn) error {
 	buckets := makeBuckets(sortedRanges)
 	overflow, err := readObjects(objects, buckets)
 	if err != nil {
 		return err
 	}
 
-	if err = cleanupBuckets(buckets); err != nil {
+	if err = cleanupBuckets(buckets, cb); err != nil {
 		return err
 	}
 
-	if err = cleanupOverflow(overflow); err != nil {
+	if err = cleanupOverflow(overflow, cb); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func Cleanup(sortedRanges []agerotate.Range, objects agerotate.Objects) error {
+	return CleanupWithCallback(sortedRanges, objects, func(_ string) {})
 }
 
 func makeBuckets(sortedRanges []agerotate.Range) []*bucket {
@@ -65,17 +71,18 @@ func readObjects(objects agerotate.Objects, buckets []*bucket) ([]agerotate.Obje
 	return overflow, nil
 }
 
-func cleanupBuckets(buckets []*bucket) error {
+func cleanupBuckets(buckets []*bucket, cb CallbackFn) error {
 	for _, b := range buckets {
-		if err := b.Cleanup(); err != nil {
+		if err := b.Cleanup(cb); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func cleanupOverflow(overflow []agerotate.Object) error {
+func cleanupOverflow(overflow []agerotate.Object, cb CallbackFn) error {
 	for _, o := range overflow {
+		cb(o.ID())
 		if err := o.Delete(); err != nil {
 			return err
 		}

@@ -15,7 +15,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/AgentZombie/agerotate"
+	"github.com/gkalele/agerotate"
 )
 
 // bucket is a container for Object(s) and is intended to hold those objects younger than the Age of the Range but older than younger buckets.
@@ -40,7 +40,7 @@ func (b bucket) Age() time.Duration {
 }
 
 // Cleanup sorts the objects in the bucket by Age then deletes objects according to the Interval. The first object in the bucket is always retained. For each object thereafter, if the age of the object is less than the age of the last retained object plus Interval, the newer object is deleted. If the next object is older than the age of the last retained object plus Interval, the newer object is retained and processing continues.
-func (b *bucket) Cleanup() error {
+func (b *bucket) Cleanup(cb CallbackFn) error {
 	if len(b.objects) < 2 {
 		return nil
 	}
@@ -50,6 +50,7 @@ func (b *bucket) Cleanup() error {
 	for _, o := range b.objects[1:] {
 		oAge := o.Age()
 		if oAge-baseAge < b.Range.Interval {
+			cb(o.ID())
 			err := o.Delete()
 			if err != nil {
 				return err
