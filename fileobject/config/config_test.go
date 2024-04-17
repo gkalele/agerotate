@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/AgentZombie/agerotate"
+	"github.com/gkalele/agerotate"
 )
 
 const (
