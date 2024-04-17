@@ -1,3 +1,3 @@
-module github.com/AgentZombie/agerotate
+module github.com/gkalele/agerotate
 
 go 1.13
